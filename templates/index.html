@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h2>Bienvenido al Portal Multifuncional</h2>
+    <p>Selecciona una de las herramientas disponibles en el menú superior</p>
+</section>
+
+<section class="features">
+    <div class="feature-card">
+        <h3>Mejoramiento de Imágenes</h3>
+        <p>Mejora la calidad de tus imágenes usando inteligencia artificial.</p>
+        <a href="{{ url_for('mejora_imagen') }}" class="btn">Probar</a>
+    </div>
+
+    <div class="feature-card">
+        <h3>Extractor de Paleta</h3>
+        <p>Extrae la paleta de colores dominantes de cualquier imagen.</p>
+        <a href="{{ url_for('paleta_colores') }}" class="btn">Probar</a>
+    </div>
+
+    <div class="feature-card">
+        <h3>Eliminar Fondo</h3>
+        <p>Elimina el fondo de tus imágenes automáticamente.</p>
+        <a href="{{ url_for('remove_bg') }}" class="btn">Probar</a>
+    </div>
+
+    <div class="feature-card">
+        <h3>Texto a Audio</h3>
+        <p>Convierte cualquier texto a audio en varios idiomas.</p>
+        <a href="{{ url_for('text_to_speech') }}" class="btn">Probar</a>
+    </div>
+
+    <div class="feature-card">
+        <h3>Generador QR</h3>
+        <p>Crea códigos QR personalizados para tus URLs o textos.</p>
+        <a href="{{ url_for('generador_qr') }}" class="btn">Probar</a>
+    </div>
+</section>
+{% endblock %}

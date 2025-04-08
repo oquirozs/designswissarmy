@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Mejoramiento de Imágenes con ESRGAN</h2>
+<p>Sube una imagen para mejorar su calidad usando el modelo ESRGAN.</p>
+
+{% if error %}
+<div class="error-message">
+    <p>{{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="file">Selecciona una imagen:</label>
+        <input type="file" name="file" id="file" accept="image/*" required>
+    </div>
+    <button type="submit">Mejorar Imagen</button>
+</form>
+
+{% if original_img and enhanced_img %}
+<div class="result">
+    <h3>Resultados:</h3>
+    <div class="image-container">
+        <div class="image-box">
+            <h4>Original</h4>
+            <img src="{{ url_for('static', filename='uploads/' + original_img) }}" alt="Imagen original">
+        </div>
+        <div class="image-box">
+            <h4>Mejorada (ESRGAN)</h4>
+            <img src="{{ url_for('static', filename='uploads/' + enhanced_img) }}" alt="Imagen mejorada">
+        </div>
+    </div>
+    <p><a href="{{ url_for('static', filename='uploads/' + enhanced_img) }}" download>Descargar imagen mejorada</a></p>
+</div>
+{% endif %}
+{% endblock %}

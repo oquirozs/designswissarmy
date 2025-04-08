@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Generador de Códigos QR</h2>
+<p>Ingresa texto o una URL para generar un código QR.</p>
+
+<form method="post">
+    <div class="form-group">
+        <label for="data">Texto o URL:</label>
+        <input type="text" name="data" id="data" required value="{% if data %}{{ data }}{% endif %}">
+    </div>
+    
+    <button type="submit">Generar QR</button>
+</form>
+
+{% if qr_image %}
+<div class="result">
+    <h3>Código QR generado:</h3>
+    <img src="{{ url_for('static', filename='uploads/' + qr_image) }}" alt="Código QR" class="qr-code">
+    <p><a href="{{ url_for('static', filename='uploads/' + qr_image) }}" download>Descargar QR</a></p>
+</div>
+{% endif %}
+{% endblock %}
