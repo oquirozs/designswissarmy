@@ -8,7 +8,7 @@ import io
 import qrcode
 from gtts import gTTS
 import cv2
-import base64
+#import base64
 import requests
 from sklearn.cluster import KMeans
 import torch
@@ -16,6 +16,9 @@ from torchvision import transforms
 import warnings
 import paypalrestsdk
 from config import Config
+from basicsr.archs.rrdbnet_arch import RRDBNet
+from realesrgan import RealESRGANer
+from realesrgan.archs.srvgg_arch import SRVGGNetCompact
 
 warnings.filterwarnings("ignore")
 
@@ -75,7 +78,7 @@ def donaciones():
 @app.route('/create_payment', methods=['POST'])
 def create_payment():
     amount = request.form.get('amount')
-    
+
     payment = paypalrestsdk.Payment({
         "intent": "sale",
         "payer": {
@@ -114,72 +117,74 @@ def execute_payment():
         return render_template('donaciones.html', error=_("Hubo un problema con tu donación."))
 
 
-# Cargar modelo ESRGAN (simplificado - en producción cargarías un modelo preentrenado)
-# Nota: En un caso real, descargarías los pesos preentrenados de ESRGAN
+# Cargar modelo REAL ESRGAN (simplificado - en producción cargarías un modelo preentrenado)
+# Nota: En un caso real, descargarías los pesos preentrenados de REAL ESRGAN
 try:
-    esrgan_model = torch.hub.load('pytorch/vision:v0.10.0', 'esrgan', pretrained=True)
-    esrgan_model.eval()
-except:
-    esrgan_model = None
-    print("Warning: No se pudo cargar el modelo ESRGAN. Usando mejora básica.")
+    # Modelo RealESRGAN (x4 plus)
+    model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+    netscale = 4
 
-# Mejoramiento de imágenes con ESRGAN
+    # Cargar pesos preentrenados (esto descargará los modelos la primera vez)
+    model_path = os.path.join('weights', 'RealESRGAN_x4plus.pth')
+    os.makedirs('weights', exist_ok=True)
+
+    if not os.path.exists(model_path):
+        url = 'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth'
+        torch.hub.download_url_to_file(url, model_path)
+
+    upsampler = RealESRGANer(
+        scale=netscale,
+        model_path=model_path,
+        model=model,
+        tile=400,  # Tile size, 0 para no usar tiles
+        tile_pad=10,
+        pre_pad=0,
+        half=False  # No usar float16
+    )
+except Exception as e:
+    print(f"Error al cargar Real-ESRGAN: {e}")
+    upsampler = None
+
+# Mejoramiento de imágenes con REAL ESRGAN
 @app.route('/mejora-imagen', methods=['GET', 'POST'])
 def mejora_imagen():
     if request.method == 'POST':
         if 'file' not in request.files:
             return redirect(request.url)
-        
+
         file = request.files['file']
         if file.filename == '':
             return redirect(request.url)
-        
+
         if file:
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-            
+
             try:
-                # Procesamiento con ESRGAN
-                img = Image.open(filepath).convert('RGB')
-                
-                if esrgan_model:
-                    # Preprocesamiento para ESRGAN
-                    preprocess = transforms.Compose([
-                        transforms.ToTensor(),
-                        transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
-                    ])
-                    
-                    input_tensor = preprocess(img)
-                    input_batch = input_tensor.unsqueeze(0)
-                    
-                    if torch.cuda.is_available():
-                        input_batch = input_batch.to('cuda')
-                        esrgan_model.to('cuda')
-                    
-                    with torch.no_grad():
-                        output = esrgan_model(input_batch)
-                    
-                    # Postprocesamiento
-                    output = output.cpu().squeeze().clamp(0, 1)
-                    output = transforms.ToPILImage()(output)
-                    
-                    enhanced_path = os.path.join(app.config['UPLOAD_FOLDER'], 'enhanced_' + filename)
-                    output.save(enhanced_path)
+                # Leer la imagen con OpenCV
+                img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+
+                if upsampler:
+                    # Procesar con Real-ESRGAN
+                    output, _ = upsampler.enhance(img, outscale=4)
                 else:
-                    # Fallback si no hay modelo ESRGAN
-                    img = img.resize((img.width * 2, img.height * 2), Image.BICUBIC)
-                    enhanced_path = os.path.join(app.config['UPLOAD_FOLDER'], 'enhanced_' + filename)
-                    img.save(enhanced_path)
-                
-                return render_template('mejora_imagen.html', 
-                                     original_img=filename, 
+                    # Fallback si no hay modelo
+                    output = cv2.resize(img, (img.shape[1]*2, img.shape[0]*2),
+                               interpolation=cv2.INTER_CUBIC)
+
+                # Guardar la imagen mejorada
+                enhanced_path = os.path.join(app.config['UPLOAD_FOLDER'], 'enhanced_' + filename)
+                cv2.imwrite(enhanced_path, output)
+
+                return render_template('mejora_imagen.html',
+                                     original_img=filename,
                                      enhanced_img='enhanced_' + filename)
-            
+
             except Exception as e:
                 print(f"Error al procesar imagen: {e}")
-                return render_template('mejora_imagen.html', error="Error al procesar la imagen")
-    
+                return render_template('mejora_imagen.html', error=_("Error al procesar la imagen"))
+
     return render_template('mejora_imagen.html')
 
 # Extractor de paleta de colores con K-Means
@@ -188,44 +193,44 @@ def paleta_colores():
     if request.method == 'POST':
         if 'file' not in request.files:
             return redirect(request.url)
-        
+
         file = request.files['file']
         if file.filename == '':
             return redirect(request.url)
-        
+
         if file:
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-            
+
             try:
                 # Procesamiento para extraer colores dominantes con K-Means
                 img = Image.open(filepath)
                 img = img.convert('RGB')
-                
+
                 # Redimensionar para hacer el procesamiento más rápido
                 img_small = img.resize((100, 100))
                 pixels = np.array(img_small).reshape(-1, 3)
-                
+
                 # Usar K-Means para encontrar colores dominantes
                 kmeans = KMeans(n_clusters=5, random_state=42)
                 kmeans.fit(pixels)
-                
+
                 # Obtener los colores dominantes (centroides de los clusters)
                 colors = kmeans.cluster_centers_.astype(int)
-                
+
                 # Ordenar colores por frecuencia
                 unique, counts = np.unique(kmeans.labels_, return_counts=True)
                 sorted_colors = [color for _, color in sorted(zip(counts, colors), reverse=True)]
-                
-                return render_template('paleta_colores.html', 
-                                     image=filename, 
+
+                return render_template('paleta_colores.html',
+                                     image=filename,
                                      colors=sorted_colors)
-            
+
             except Exception as e:
                 print(f"Error al extraer colores: {e}")
                 return render_template('paleta_colores.html', error="Error al extraer colores")
-    
+
     return render_template('paleta_colores.html')
 
 # Eliminar fondo con Remove.bg API
@@ -234,16 +239,16 @@ def remove_bg():
     if request.method == 'POST':
         if 'file' not in request.files:
             return redirect(request.url)
-        
+
         file = request.files['file']
         if file.filename == '':
             return redirect(request.url)
-        
+
         if file:
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
-            
+
             try:
                 # Llamar a la API de Remove.bg
                 response = requests.post(
@@ -252,25 +257,25 @@ def remove_bg():
                     data={'size': 'auto'},
                     headers={'X-Api-Key': app.config['REMOVE_BG_API_KEY']},
                 )
-                
+
                 if response.status_code == requests.codes.ok:
                     # Guardar la imagen sin fondo
                     result_path = os.path.join(app.config['UPLOAD_FOLDER'], 'nobg_' + filename)
                     with open(result_path, 'wb') as out:
                         out.write(response.content)
-                    
-                    return render_template('remove_bg.html', 
-                                         original_img=filename, 
+
+                    return render_template('remove_bg.html',
+                                         original_img=filename,
                                          result_img='nobg_' + filename)
                 else:
                     error_msg = f"Error API: {response.status_code} {response.text}"
                     print(error_msg)
                     return render_template('remove_bg.html', error=error_msg)
-            
+
             except Exception as e:
                 print(f"Error al eliminar fondo: {e}")
                 return render_template('remove_bg.html', error="Error al eliminar el fondo")
-    
+
     return render_template('remove_bg.html')
 
 # (Las rutas text_to_speech y generador_qr permanecen iguales)
@@ -279,23 +284,23 @@ def text_to_speech():
     if request.method == 'POST':
         text = request.form.get('text', '')
         lang = request.form.get('lang', 'es')
-        
+
         if text:
             tts = gTTS(text=text, lang=lang, slow=False)
             audio_path = os.path.join(app.config['UPLOAD_FOLDER'], 'speech.mp3')
             tts.save(audio_path)
-            
-            return render_template('text_to_speech.html', 
-                                 audio_file='speech.mp3', 
+
+            return render_template('text_to_speech.html',
+                                 audio_file='speech.mp3',
                                  text=text)
-    
+
     return render_template('text_to_speech.html')
 
 @app.route('/generador-qr', methods=['GET', 'POST'])
 def generador_qr():
     if request.method == 'POST':
         data = request.form.get('data', '')
-        
+
         if data:
             qr = qrcode.QRCode(
                 version=1,
@@ -305,17 +310,17 @@ def generador_qr():
             )
             qr.add_data(data)
             qr.make(fit=True)
-            
+
             img = qr.make_image(fill_color="black", back_color="white")
-            
+
             # Guardar QR
             qr_path = os.path.join(app.config['UPLOAD_FOLDER'], 'qr_code.png')
             img.save(qr_path)
-            
-            return render_template('generador_qr.html', 
-                                 qr_image='qr_code.png', 
+
+            return render_template('generador_qr.html',
+                                 qr_image='qr_code.png',
                                  data=data)
-    
+
     return render_template('generador_qr.html')
 
 if __name__ == '__main__':
