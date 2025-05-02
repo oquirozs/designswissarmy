@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2>Mejoramiento de Imágenes con ESRGAN</h2>
-<p>Sube una imagen para mejorar su calidad usando el modelo ESRGAN.</p>
+<h2>{{ _('Mejoramiento de Imágenes con Real-ESRGAN') }}</h2>
+<p>{{ _('Sube una imagen para mejorar su calidad usando el modelo Real-ESRGAN (aumento de resolución 4x).') }}</p>
 
 {% if error %}
 <div class="error-message">
@@ -10,28 +10,136 @@
 </div>
 {% endif %}
 
-<form method="post" enctype="multipart/form-data">
+<form id="upload-form" method="post" enctype="multipart/form-data">
     <div class="form-group">
-        <label for="file">Selecciona una imagen:</label>
+        <label for="file">{{ _('Selecciona una imagen:') }}</label>
         <input type="file" name="file" id="file" accept="image/*" required>
     </div>
-    <button type="submit">Mejorar Imagen</button>
+    <button type="submit">{{ _('Mejorar Imagen') }}</button>
 </form>
 
-{% if original_img and enhanced_img %}
-<div class="result">
-    <h3>Resultados:</h3>
+<div id="progress-container" style="display: none;">
+    <h3>{{ _('Procesando imagen...') }}</h3>
+    <div class="progress-bar">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+        <span class="progress-text" id="progress-text">0%</span>
+    </div>
+    <p id="progress-details">{{ _('Preparando modelo...') }}</p>
+</div>
+
+<div id="result-container" style="display: none;">
+    <h3>{{ _('Resultados:') }}</h3>
     <div class="image-container">
         <div class="image-box">
-            <h4>Original</h4>
-            <img src="{{ url_for('static', filename='uploads/' + original_img) }}" alt="Imagen original">
+            <h4>{{ _('Original') }}</h4>
+            <img id="original-img" src="" alt="{{ _('Imagen original') }}">
         </div>
         <div class="image-box">
-            <h4>Mejorada (ESRGAN)</h4>
-            <img src="{{ url_for('static', filename='uploads/' + enhanced_img) }}" alt="Imagen mejorada">
+            <h4>{{ _('Mejorada (Real-ESRGAN)') }}</h4>
+            <img id="enhanced-img" src="" alt="{{ _('Imagen mejorada') }}">
         </div>
     </div>
-    <p><a href="{{ url_for('static', filename='uploads/' + enhanced_img) }}" download>Descargar imagen mejorada</a></p>
+    <p><a id="download-link" href="" download>{{ _('Descargar imagen mejorada') }}</a></p>
 </div>
-{% endif %}
+
+<div class="info-box">
+    <h3>{{ _('Nota sobre el procesamiento:') }}</h3>
+    <p>{{ _('El mejoramiento de imágenes puede tomar varios segundos dependiendo del tamaño de la imagen y la capacidad de tu dispositivo. Por favor, mantén esta página abierta durante el procesamiento.') }}</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.1/socket.io.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const socket = io();
+        let currentTaskId = null;
+
+        // Configurar el formulario
+        const uploadForm = document.getElementById('upload-form');
+        const progressContainer = document.getElementById('progress-container');
+        const resultContainer = document.getElementById('result-container');
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const progressText = document.getElementById('progress-text');
+        const progressDetails = document.getElementById('progress-details');
+
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('file');
+            if (fileInput.files.length === 0) return;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            // Mostrar contenedor de progreso
+            progressContainer.style.display = 'block';
+            resultContainer.style.display = 'none';
+
+            // Subir el archivo al servidor
+            fetch('{{ url_for("mejora_imagen") }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.filename) {
+                    currentTaskId = 'task-' + Date.now();
+
+                    // Mostrar la imagen original
+                    document.getElementById('original-img').src =
+                        '{{ url_for("static", filename="uploads/") }}' + data.filename;
+
+                    // Iniciar procesamiento via WebSocket
+                    socket.emit('process_image', {
+                        task_id: currentTaskId,
+                        filename: data.filename
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                progressDetails.textContent = 'Error: ' + error.message;
+            });
+        });
+
+        // Escuchar eventos de progreso
+        socket.on('progress_update', function(data) {
+            if (data.task_id === currentTaskId) {
+                const progress = Math.round(data.progress);
+                progressBarFill.style.width = progress + '%';
+                progressText.textContent = progress + '%';
+
+                // Actualizar detalles
+                if (data.total) {
+                    progressDetails.textContent =
+                        `Procesando: ${data.current} de ${data.total} tiles...`;
+                }
+            }
+        });
+
+        socket.on('processing_complete', function(data) {
+            if (data.task_id === currentTaskId) {
+                // Ocultar progreso, mostrar resultados
+                progressContainer.style.display = 'none';
+                resultContainer.style.display = 'block';
+
+                // Mostrar la imagen mejorada
+                document.getElementById('enhanced-img').src =
+                    '{{ url_for("static", filename="uploads/") }}' + data.result_filename;
+
+                // Configurar enlace de descarga
+                document.getElementById('download-link').href =
+                    '{{ url_for("static", filename="uploads/") }}' + data.result_filename;
+            }
+        });
+
+        socket.on('processing_error', function(data) {
+            if (data.task_id === currentTaskId) {
+                progressDetails.textContent = 'Error: ' + data.error;
+                progressBarFill.style.backgroundColor = '#ff6b6b';
+            }
+        });
+    });
+</script>
 {% endblock %}

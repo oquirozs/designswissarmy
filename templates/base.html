@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{{ _('Portal Multifuncional') }}{% endblock %}</title>
+    <title>{% block title %}{{ _('Design SwissArmy') }}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <header>
-        <h1>{{ _('Portal Multifuncional') }}</h1>
+        <h1><img src="static/images/logo.png" alt="Texto alternativo" width="150" height="150"></h1>
+        <h1>{{ _('Design SwissArmy') }}</h1>
         <nav>
             <ul>
                 <li><a href="{{ url_for('index') }}">{{ _('Inicio') }}</a></li>
@@ -19,7 +20,7 @@
                 <li><a href="{{ url_for('generador_qr') }}">{{ _('Generador QR') }}</a></li>
                 <li><a href="{{ url_for('donaciones') }}">{{ _('Donaciones') }}</a></li>
                 <li class="language-switcher">
-                    <a href="{{ url_for('set_language', language='es') }}">ES</a> | 
+                    <a href="{{ url_for('set_language', language='es') }}">ES</a> |
                     <a href="{{ url_for('set_language', language='en') }}">EN</a>
                 </li>
             </ul>
@@ -36,7 +37,7 @@
                 </div>
             {% endif %}
         {% endwith %}
-        
+
         {% block content %}{% endblock %}
     </main>
 
