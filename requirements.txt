@@ -1,6 +1,6 @@
 Flask
 Flask-Babel
-os
+os-sys
 werkzeug
 Pillow
 numpy
