@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Conversor de Texto a Audio</h2>
+<p>Ingresa texto para convertirlo a audio en varios idiomas.</p>
+
+<form method="post">
+    <div class="form-group">
+        <label for="text">Texto a convertir:</label>
+        <textarea name="text" id="text" rows="5" required>{% if text %}{{ text }}{% endif %}</textarea>
+    </div>
+    
+    <div class="form-group">
+        <label for="lang">Idioma:</label>
+        <select name="lang" id="lang">
+            <option value="es">Español</option>
+            <option value="en">Inglés</option>
+            <option value="fr">Francés</option>
+            <option value="de">Alemán</option>
+            <option value="it">Italiano</option>
+            <option value="pt">Portugués</option>
+        </select>
+    </div>
+    
+    <button type="submit">Convertir a Audio</button>
+</form>
+
+{% if audio_file %}
+<div class="result">
+    <h3>Audio generado:</h3>
+    <div class="audio-player">
+        <audio controls>
+            <source src="{{ url_for('static', filename='uploads/' + audio_file) }}" type="audio/mpeg">
+            Tu navegador no soporta el elemento de audio.
+        </audio>
+        <p><a href="{{ url_for('static', filename='uploads/' + audio_file) }}" download>Descargar audio</a></p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Extractor de Paleta de Colores con K-Means</h2>
+<p>Sube una imagen para extraer su paleta de colores dominantes usando el algoritmo K-Means.</p>
+
+{% if error %}
+<div class="error-message">
+    <p>{{ error }}</p>
+</div>
+{% endif %}
+
+<form method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="file">Selecciona una imagen:</label>
+        <input type="file" name="file" id="file" accept="image/*" required>
+    </div>
+    <button type="submit">Extraer Colores</button>
+</form>
+
+{% if image and colors %}
+<div class="result">
+    <h3>Paleta de colores:</h3>
+    <img src="{{ url_for('static', filename='uploads/' + image) }}" alt="Imagen analizada" style="max-width: 300px; margin-bottom: 20px;">
+    
+    <div class="color-palette">
+        {% for color in colors %}
+        <div class="color-box" style="background-color: rgb({{ color[0] }}, {{ color[1] }}, {{ color[2] }});" 
+             title="RGB: {{ color[0] }}, {{ color[1] }}, {{ color[2] }}">
+            <span class="hex-code">#{{ '%02x%02x%02x' % (color[0], color[1], color[2]) }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="color-values">
+        <h4>Valores RGB:</h4>
+        <ul>
+            {% for color in colors %}
+            <li>RGB({{ color[0] }}, {{ color[1] }}, {{ color[2] }}) - Hex: #{{ '%02x%02x%02x' % (color[0], color[1], color[2]) }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

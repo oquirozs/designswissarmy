@@ -1,0 +1,103 @@
+# Spanish translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-04-07 12:04-0600\n"
+"PO-Revision-Date: 2025-04-07 12:06-0600\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: D:/Escritorio/Proyectos/Pruebas/app.py:61
+msgid "Donación al Portal Multifuncional"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/app.py:84
+msgid "¡Gracias por tu donación!"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/app.py:86
+msgid "Hubo un problema con tu donación."
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:6
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:11
+msgid "Portal Multifuncional"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:14
+msgid "Inicio"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:15
+msgid "Mejorar Imagen"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:16
+msgid "Paleta de Colores"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:17
+msgid "Eliminar Fondo"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:18
+msgid "Texto a Audio"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:19
+msgid "Generador QR"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:20
+msgid "Donaciones"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/base.html:44
+msgid "2023 Portal Multifuncional. Todos los derechos reservados."
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/donaciones.html:5
+msgid "Apoya nuestro proyecto"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/donaciones.html:6
+msgid ""
+"Tu donación nos ayuda a mantener y mejorar este portal. ¡Gracias por tu "
+"apoyo!"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/donaciones.html:21
+msgid "Selecciona un monto de donación:"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/donaciones.html:31
+msgid "O ingresa un monto personalizado:"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/donaciones.html:32
+msgid "Monto en USD"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/donaciones.html:35
+msgid "Donar con PayPal"
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/donaciones.html:40
+msgid "Todas las donaciones se procesan de forma segura a través de PayPal."
+msgstr ""
+
+#: D:/Escritorio/Proyectos/Pruebas/templates/donaciones.html:47
+msgid "Procesando tu donación..."
+msgstr ""
+
