@@ -60,7 +60,7 @@ tensorboard==2.18.0
 tensorboard-data-server==0.7.2
 tensorflow==2.18.0
 torch==2.5.1
-torchaudio==2.6.0+cu118
+torchaudio
 torchvision==0.21.0
 wcwidth==0.2.13
 websocket-client==1.8.0
